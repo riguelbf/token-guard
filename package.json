@@ -1,0 +1,17 @@
+{
+  "name": "token-guard",
+  "version": "1.0.0",
+  "description": "Monitor and enforce daily token/cost limits for Claude Code and OpenAI/Codex",
+  "bin": {
+    "token-guard": "./bin/token-guard.js"
+  },
+  "main": "./lib/index.js",
+  "scripts": {
+    "test": "node bin/token-guard.js status"
+  },
+  "keywords": ["claude", "openai", "codex", "tokens", "cost", "limit"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

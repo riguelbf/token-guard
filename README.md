@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/token-guard-icon.svg" alt="Token Guard" width="144" />
+</p>
+
 # token-guard
 
 Monitora e limita o custo diário de uso de tokens do **Claude Code** e **OpenAI/Codex**, bloqueando novas chamadas quando o limite é atingido e exigindo confirmação para continuar.

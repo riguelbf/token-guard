@@ -12,6 +12,7 @@ Monitora e limita o custo diário de uso de tokens do **Claude Code** e **OpenAI
 
 - **Claude Code** — integração via hooks nativos (`PreToolUse` e `Stop`). O uso é registrado automaticamente ao final de cada resposta e novas ferramentas são bloqueadas se o limite for ultrapassado.
 - **OpenAI / Codex** — integração via proxy HTTP local. O instalador escreve `~/.codex/config.toml` com `openai_base_url` para apontar ao proxy e grava `~/.token-guard/activation.txt` com a referência portátil da instalação. As chamadas `chat/completions`, `completions`, `embeddings` e `responses` passam pelo token-guard.
+- Quando não há token OpenAI ativo no ambiente, o consumo é salvo como **estimado** em vez de real. Quando há `OPENAI_API_KEY`, `OPENAI_KEY` ou `OPENAI_ACCESS_TOKEN`, o consumo vai para o bucket real.
 - O custo é calculado em USD com base nos preços oficiais por modelo (configurável).
 - Os dados ficam em `~/.token-guard/` — por usuário, persistente entre sessões.
 
@@ -66,10 +67,13 @@ Saída:
   openai        10,000         3,000            0         $0.0550
   ────────────────────────────────────────────────────────────
   ████░░░░░░░░░░░░░░░░  $0.3715 / $10.0000  (3.7%)
+  Real: $0.3715
   Remaining: $9.6285  |  Calls: 2
 
   OK
 ```
+
+Se o OpenAI estiver sem token ativo, o `status` mostra uma faixa separada `Estimated` e o aviso `ESTIMATED — no exact usage was available`.
 
 ---
 
@@ -194,6 +198,26 @@ token-guard track \
   --output=800
 ```
 
+### Estimativa local
+
+Quando você quiser prever consumo sem chamar a OpenAI:
+
+```bash
+token-guard estimate \
+  --model=gpt-4o \
+  --input-text="Write a short haiku about tests." \
+  --output-text="Tests keep bugs away."
+```
+
+Também aceita arquivos:
+
+```bash
+token-guard estimate \
+  --model=gpt-4o \
+  --input-file=prompt.txt \
+  --output-file=response.txt
+```
+
 ---
 
 ### Verificação em scripts CI/CD
@@ -221,6 +245,7 @@ token-guard check || { echo "Limite diário atingido"; exit 1; }
 | `token-guard proxy stop` | Para o proxy |
 | `token-guard proxy status` | Status do proxy |
 | `token-guard track --provider= --model= --input= --output=` | Registra uso manualmente |
+| `token-guard estimate --model= --input-text= --output-text=` | Estima tokens localmente sem chamar a OpenAI |
 | `token-guard check` | Exit 1 se bloqueado, 0 se OK |
 | `token-guard config` | Exibe a configuração atual |
 
@@ -268,12 +293,13 @@ Todos os dados ficam localmente em `~/.token-guard/`:
     └── 2026-03-26.json
 ```
 
-Nenhum dado é enviado a servidores externos. O proxy apenas encaminha as requisições ao destino original (OpenAI).
+Nenhum dado é enviado a servidores externos pelo próprio token-guard. O proxy apenas encaminha as requisições ao destino original (OpenAI).
 
 ---
 
 ## Limitações conhecidas
 
 - **Extensões de editor** (GitHub Copilot, Cursor): a maioria tem o endpoint hardcoded e não respeita `OPENAI_BASE_URL`. O proxy não intercepta essas chamadas. Para esses casos, a integração continua sendo por configuração específica do app.
-- **Streaming com uso**: o proxy só registra tokens quando a resposta inclui o campo `usage` no stream. Em clientes que usam `stream: true`, configure `stream_options: { include_usage: true }` para garantir o rastreamento.
+- **Streaming com uso**: o proxy registra o uso real quando a resposta inclui `usage` no stream. Se não houver `usage`, ele calcula uma estimativa local e salva como `Estimated`.
+- **OpenAI sem token ativo**: o consumo entra como estimativa. Com token ativo, o consumo entra como valor real e aparece como `Real` no `status`.
 - **Claude Code**: o bloqueio ocorre no início do próximo turno (PreToolUse), não no meio de uma resposta em andamento.

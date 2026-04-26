@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 'use strict';
 
-const { loadDay, loadHistory, track, isBlocked, unlockToday, resetToday } = require('../lib/tracker');
+const fs = require('fs');
+const { loadDay, loadHistory, track, isBlocked, unlockToday, resetToday, calcCost } = require('../lib/tracker');
 const { load: loadConfig, save: saveConfig }                               = require('../lib/config');
 const { printStatus, printHistory }                                        = require('../lib/display');
+const { estimateUsageFromExchange }                                        = require('../lib/estimate');
 const installer                                                            = require('../lib/installer');
 
 const [,, cmd, ...args] = process.argv;
@@ -31,7 +33,8 @@ async function main() {
     case 'status': {
       const usage  = loadDay();
       const config = loadConfig();
-      printStatus(usage, config);
+      const { getProxyStatus } = require('../lib/proxy');
+      printStatus(usage, config, getProxyStatus());
       break;
     }
 
@@ -112,6 +115,39 @@ async function main() {
         call_cost_usd: callCost,
         total_cost_usd: usage.total_cost_usd,
       }) + '\n');
+      break;
+    }
+
+    // ── estimate ────────────────────────────────────────────────────────
+    // Estimate usage locally without calling OpenAI.
+    // token-guard estimate --model=gpt-4o --input-text="..." [--output-text="..."]
+    case 'estimate': {
+      const opts = parseFlags(args);
+      const provider = opts.provider || 'openai';
+      const model = opts.model || '';
+      const inputText = readTextOption(opts, 'input-text') || readTextOption(opts, 'text') || '';
+      const outputText = readTextOption(opts, 'output-text') || '';
+
+      const usage = estimateUsageFromExchange(
+        { input: inputText },
+        { output_text: outputText }
+      );
+
+      if (!usage) {
+        console.error('Usage: token-guard estimate --model=<model> --input-text="..." [--output-text="..."]');
+        process.exit(1);
+      }
+
+      const cost = calcCost(provider, model, usage.input_tokens, usage.output_tokens, usage.cache_read_tokens);
+      console.log('');
+      console.log('  Estimated usage');
+      console.log(`  Provider: ${provider}`);
+      console.log(`  Model:    ${model || '(default)'}`);
+      console.log(`  Input:    ${usage.input_tokens}`);
+      console.log(`  Output:   ${usage.output_tokens}`);
+      console.log(`  Cache:    ${usage.cache_read_tokens}`);
+      console.log(`  Cost:     ~$${cost.toFixed(4)}`);
+      console.log('');
       break;
     }
 
@@ -267,6 +303,23 @@ function parseFlags(args) {
   return result;
 }
 
+function readTextOption(opts, key) {
+  if (opts[key] !== undefined && opts[key] !== true) {
+    return String(opts[key]);
+  }
+
+  const fileKey = key.endsWith('-text') ? key.replace('-text', '-file') : `${key}-file`;
+  if (opts[fileKey] && opts[fileKey] !== true) {
+    const filePath = String(opts[fileKey]);
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`);
+    }
+    return fs.readFileSync(filePath, 'utf8');
+  }
+
+  return '';
+}
+
 function printHelp() {
   console.log(`
   token-guard — daily token cost limiter for Claude Code and OpenAI/Codex
@@ -286,6 +339,7 @@ function printHelp() {
     proxy status            Show proxy status
     config                  Show current configuration
     track --provider=...    Record usage manually (used by hooks)
+    estimate                Estimate tokens locally from text or files
     check                   Exit 1 if blocked, 0 if OK (for scripts)
 
   Quick start:

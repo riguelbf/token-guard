@@ -7,7 +7,8 @@
   },
   "main": "./lib/index.js",
   "scripts": {
-    "test": "node bin/token-guard.js status"
+    "test": "node --test test/token-consumption.test.js",
+    "status": "node bin/token-guard.js status"
   },
   "keywords": ["claude", "openai", "codex", "tokens", "cost", "limit"],
   "license": "MIT",

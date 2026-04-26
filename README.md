@@ -7,7 +7,7 @@ Monitora e limita o custo diário de uso de tokens do **Claude Code** e **OpenAI
 ## Como funciona
 
 - **Claude Code** — integração via hooks nativos (`PreToolUse` e `Stop`). O uso é registrado automaticamente ao final de cada resposta e novas ferramentas são bloqueadas se o limite for ultrapassado.
-- **OpenAI / Codex** — integração via proxy HTTP local. Configure `OPENAI_BASE_URL` para apontar ao proxy e as chamadas `chat/completions`, `completions`, `embeddings` e `responses` passam pelo token-guard.
+- **OpenAI / Codex** — integração via proxy HTTP local. O instalador escreve `~/.codex/config.toml` com `openai_base_url` para apontar ao proxy e grava `~/.token-guard/activation.txt` com a referência portátil da instalação. As chamadas `chat/completions`, `completions`, `embeddings` e `responses` passam pelo token-guard.
 - O custo é calculado em USD com base nos preços oficiais por modelo (configurável).
 - Os dados ficam em `~/.token-guard/` — por usuário, persistente entre sessões.
 
@@ -37,8 +37,8 @@ token-guard install
 # 3. Inicia o proxy para OpenAI/Codex
 token-guard proxy start
 
-# 4. Aponta o SDK/CLI da OpenAI para o proxy (adicione ao ~/.zshrc ou ~/.bashrc)
-export OPENAI_BASE_URL=http://127.0.0.1:4141/v1
+# 4. O instalador configura o Codex automaticamente via ~/.codex/config.toml
+#    e grava ~/.token-guard/activation.txt com os detalhes portáveis
 ```
 
 ---
@@ -211,8 +211,8 @@ token-guard check || { echo "Limite diário atingido"; exit 1; }
 | `token-guard disable` | Desliga a trava completamente |
 | `token-guard enable` | Reativa a trava |
 | `token-guard reset` | Zera o uso do dia atual |
-| `token-guard install` | Instala hooks no Claude Code |
-| `token-guard uninstall` | Remove hooks do Claude Code |
+| `token-guard install` | Instala hooks no Claude Code e a config portátil do Codex |
+| `token-guard uninstall` | Remove hooks do Claude Code e a config portátil do Codex |
 | `token-guard proxy start` | Inicia o proxy OpenAI em background |
 | `token-guard proxy stop` | Para o proxy |
 | `token-guard proxy status` | Status do proxy |
@@ -256,6 +256,7 @@ Todos os dados ficam localmente em `~/.token-guard/`:
 
 ```
 ~/.token-guard/
+├── activation.txt       # referência portátil da instalação
 ├── config.json          # configurações e limites
 ├── proxy.pid            # PID do proxy (quando ativo)
 └── usage/
@@ -269,6 +270,6 @@ Nenhum dado é enviado a servidores externos. O proxy apenas encaminha as requis
 
 ## Limitações conhecidas
 
-- **Extensões de editor** (GitHub Copilot, Cursor): a maioria tem o endpoint hardcoded e não respeita `OPENAI_BASE_URL`. O proxy não intercepta essas chamadas.
+- **Extensões de editor** (GitHub Copilot, Cursor): a maioria tem o endpoint hardcoded e não respeita `OPENAI_BASE_URL`. O proxy não intercepta essas chamadas. Para esses casos, a integração continua sendo por configuração específica do app.
 - **Streaming com uso**: o proxy só registra tokens quando a resposta inclui o campo `usage` no stream. Em clientes que usam `stream: true`, configure `stream_options: { include_usage: true }` para garantir o rastreamento.
 - **Claude Code**: o bloqueio ocorre no início do próximo turno (PreToolUse), não no meio de uma resposta em andamento.

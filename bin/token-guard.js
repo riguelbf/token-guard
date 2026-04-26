@@ -154,10 +154,9 @@ async function main() {
       console.log('\nDone. Hooks will activate in the next Claude Code session.\n');
 
       const config = loadConfig();
-      console.log('OpenAI/Codex proxy setup:');
-      console.log(`  Start:  token-guard proxy start`);
-      console.log(`  Then set in your shell or .env:`);
-      console.log(`    export OPENAI_BASE_URL=http://127.0.0.1:${config.proxy_port}/v1`);
+      console.log('Codex config setup:');
+      console.log(`  Config: ~/.codex/config.toml`);
+      console.log(`  Base URL: http://127.0.0.1:${config.proxy_port}/v1`);
       console.log('');
       break;
     }
@@ -216,7 +215,7 @@ async function main() {
             const st = getProxyStatus();
             if (st.running) {
               console.log(`Proxy started (pid ${st.pid})`);
-              console.log(`export OPENAI_BASE_URL=http://127.0.0.1:${config.proxy_port}/v1`);
+              console.log(`Codex uses ~/.codex/config.toml with openai_base_url=http://127.0.0.1:${config.proxy_port}/v1`);
             } else {
               console.log('Failed to start proxy. Run in foreground: TOKEN_GUARD_PROXY_CHILD=1 token-guard proxy start');
             }
@@ -293,7 +292,6 @@ function printHelp() {
     token-guard limit 10          # set $10/day limit
     token-guard install           # hook into Claude Code
     token-guard proxy start       # start OpenAI proxy
-    export OPENAI_BASE_URL=http://127.0.0.1:4141/v1
 `);
 }
 

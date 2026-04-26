@@ -234,6 +234,22 @@ token-guard estimate \
   --output-file=response.txt
 ```
 
+Se você rodar `track` para OpenAI sem `OPENAI_API_KEY` ativo, o valor vai para o bucket estimado e o `status` passa a mostrar algo como:
+
+```bash
+token-guard track --provider=openai --model=gpt-4o --input=100 --output=40
+token-guard status
+```
+
+Saída resumida:
+
+```text
+Estimated usage
+openai (est)  100  40  0  ~$0.0006
+Real: $0.0718  Estimated: $0.0006
+ESTIMATED — no exact usage was available
+```
+
 ---
 
 ### Verificação em scripts CI/CD

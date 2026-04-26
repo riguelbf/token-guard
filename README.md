@@ -7,7 +7,7 @@ Monitora e limita o custo diário de uso de tokens do **Claude Code** e **OpenAI
 ## Como funciona
 
 - **Claude Code** — integração via hooks nativos (`PreToolUse` e `Stop`). O uso é registrado automaticamente ao final de cada resposta e novas ferramentas são bloqueadas se o limite for ultrapassado.
-- **OpenAI / Codex** — integração via proxy HTTP local. Configure `OPENAI_BASE_URL` para apontar ao proxy e todas as chamadas à API passam pelo token-guard.
+- **OpenAI / Codex** — integração via proxy HTTP local. Configure `OPENAI_BASE_URL` para apontar ao proxy e as chamadas `chat/completions`, `completions`, `embeddings` e `responses` passam pelo token-guard.
 - O custo é calculado em USD com base nos preços oficiais por modelo (configurável).
 - Os dados ficam em `~/.token-guard/` — por usuário, persistente entre sessões.
 
@@ -270,5 +270,5 @@ Nenhum dado é enviado a servidores externos. O proxy apenas encaminha as requis
 ## Limitações conhecidas
 
 - **Extensões de editor** (GitHub Copilot, Cursor): a maioria tem o endpoint hardcoded e não respeita `OPENAI_BASE_URL`. O proxy não intercepta essas chamadas.
-- **Streaming com uso**: o proxy só registra tokens quando a resposta inclui o campo `usage` no stream. Configure `stream_options: { include_usage: true }` no cliente para garantir o rastreamento.
+- **Streaming com uso**: o proxy só registra tokens quando a resposta inclui o campo `usage` no stream. Em clientes que usam `stream: true`, configure `stream_options: { include_usage: true }` para garantir o rastreamento.
 - **Claude Code**: o bloqueio ocorre no início do próximo turno (PreToolUse), não no meio de uma resposta em andamento.

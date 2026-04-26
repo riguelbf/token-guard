@@ -73,7 +73,23 @@ Saída:
   OK
 ```
 
-Se o OpenAI estiver sem token ativo, o `status` mostra uma faixa separada `Estimated` e o aviso `ESTIMATED — no exact usage was available`.
+Se o OpenAI estiver sem token ativo, o `status` mostra uma faixa separada `Estimated` e o aviso `ESTIMATED — no exact usage was available`:
+
+```
+  Token Guard  —  2026-03-25
+  ────────────────────────────────────────────────────────────
+  Provider      Input tkns    Output tkns   Cache tkns    Cost
+  ────────────────────────────────────────────────────────────
+  claude        45,000        12,000        5,000         $0.3165
+  Estimated usage
+  openai (est)   10,000         3,000            0        ~$0.0550
+  ────────────────────────────────────────────────────────────
+  ████░░░░░░░░░░░░░░░░  $0.3715 / $10.0000  (3.7%)
+  Real: $0.3165  Estimated: $0.0550
+  Remaining: $9.6285  |  Calls: 2
+
+  ESTIMATED — no exact usage was available
+```
 
 ---
 
